@@ -1,83 +1,57 @@
-from PyQt6.QtWidgets import (
-    QMainWindow, QMessageBox, QLineEdit, QPushButton, QVBoxLayout,
-    QWidget, QLabel, QToolTip, QDialog, QTextEdit
-)
-from PyQt6.QtGui import QIcon
+import sys
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QMessageBox
 from PyQt6.QtCore import Qt
+from meet_tab import MeetTab
+from timing_tab import TimingTab
+from results_tab import ResultsTab
+from settings_tab import SettingsTab
+from help_content import onboarding_dialog
+from utils.logger import get_logger
 
-class HelpDialog(QDialog):
-    def __init__(self, help_text, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Help & Onboarding")
-        layout = QVBoxLayout()
-        text = QTextEdit()
-        text.setReadOnly(True)
-        text.setText(help_text)
-        layout.addWidget(text)
-        self.setLayout(layout)
-        self.setMinimumSize(400, 300)
+logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Swim Meet Manager")
-        self.setup_ui()
+        self.setWindowTitle("Swim Meet Manager v2")
+        self.setWindowState(Qt.WindowState.WindowMaximized)
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
 
-    def setup_ui(self):
-        layout = QVBoxLayout()
-        self.event_name = QLineEdit()
-        self.event_name.setPlaceholderText("Enter event name...")
-        self.event_name.setToolTip("Type the event name here, e.g., '100m Freestyle'")
-        layout.addWidget(QLabel("Event Name:"))
-        layout.addWidget(self.event_name)
+        # Add each independently-coded, robust tab
+        self.tab_meet = MeetTab(parent=self)
+        self.tab_timing = TimingTab(parent=self)
+        self.tab_results = ResultsTab(parent=self)
+        self.tab_settings = SettingsTab(parent=self)
+        self.tabs.addTab(self.tab_meet, "Meet Setup")
+        self.tabs.addTab(self.tab_timing, "Timing Devices")
+        self.tabs.addTab(self.tab_results, "Results/Export")
+        self.tabs.addTab(self.tab_settings, "Settings & Tools")
 
-        self.add_button = QPushButton("Add Event")
-        self.add_button.setToolTip("Add the event to the meet (cannot be blank or duplicate)")
-        self.add_button.clicked.connect(self.add_event)
-        layout.addWidget(self.add_button)
+        # Optional: On first start, show onboarding
+        self.show_onboarding_if_needed()
 
-        self.help_button = QPushButton("Help / Onboarding")
-        self.help_button.clicked.connect(self.show_help)
-        layout.addWidget(self.help_button)
+        self.menu = self.menuBar().addMenu('Help')
+        helpAction = self.menu.addAction('Onboarding/Help')
+        helpAction.triggered.connect(lambda: onboarding_dialog(self))
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+    def show_onboarding_if_needed(self):
+        # Logic for onboarding only on first start
+        # ...
+        onboarding_dialog(self)
 
-    def add_event(self):
-        name = self.event_name.text().strip()
-        if not name:
-            self.show_error("Event name cannot be blank.")
-            return
-        # For duplicates, check actual event data model here
-        # if name in existing_events: ...
-        self.show_status(f"Event '{name}' added.", success=True)
-        self.event_name.clear()
-
-    def show_error(self, message):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Critical)
-        msg.setText(message)
-        msg.setWindowTitle("Input Error")
-        msg.show()
-        msg.exec()
-
-    def show_status(self, message, success=False):
-        if success:
-            self.statusBar().showMessage(message, 3000)  # Green or happy icon as style add-on
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Confirm Exit', "Are you sure you want to quit?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            logger.info("Application exited by user.")
+            event.accept()
         else:
-            self.statusBar().showMessage(message, 3000)
+            event.ignore()
 
-    def show_help(self):
-        help_text = (
-            "Welcome to Swim Meet Manager!\n\n"
-            "- Fill in the event form, then click 'Add Event'.\n"
-            "- Tooltips provide extra information for each field/button.\n"
-            "- Errors are shown for missing or duplicate data.\n"
-            "- Retry options will appear if hardware/export fails.\n"
-            "- Use the Help button for onboarding at any time."
-        )
-        dlg = HelpDialog(help_text, self)
-        dlg.exec()
-
-# For icons/colors, set icons with QPushButton.setIcon(QIcon('...')) and use style sheets for success/error colors.
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec())
