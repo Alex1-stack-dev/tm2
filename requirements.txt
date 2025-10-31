@@ -1,0 +1,13 @@
+PyQt6>=6.4
+fastapi>=0.85
+uvicorn>=0.18
+pytest>=7.3
+pytest-qt>=4.2
+requests>=2.28
+reportlab>=3.6
+# sqlite3 is included in Python 3.x standard library, no install needed.
+# dropbox (optional, for cloud export)
+# dropbox>=11.36
+pyinstaller>=5.8
+
+# Add additional libraries for hardware/cloud support as needed
