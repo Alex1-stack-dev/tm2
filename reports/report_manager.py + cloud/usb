@@ -1,0 +1,30 @@
+import csv
+import os
+from models.storage import get_results
+# Generate customizable CSV/PDF report for a given meet ID
+def export_csv(meet_id, filename):
+    results = get_results(meet_id)
+    with open(filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Swimmer', 'Time'])
+        for row in results:
+            writer.writerow(row)
+
+def import_results_csv(filename, meet_id):
+    with open(filename, 'r') as f:
+        reader = csv.reader(f)
+        next(reader)  # skip header
+        for swimmer, time in reader:
+            save_result(meet_id, swimmer, float(time))
+# Cloud/USB: User picks path in QFileDialog, do open/save as usual. To sync to Google Drive/Dropbox, use their Python SDKs.
+def export_to_usb(meet_id, usb_mount_path):
+    filename = os.path.join(usb_mount_path, f"meet_{meet_id}_results.csv")
+    export_csv(meet_id, filename)
+# For Dropbox Example:
+def export_to_dropbox(meet_id, dropbox_token, remote_path):
+    import dropbox
+    dbx = dropbox.Dropbox(dropbox_token)
+    local_csv = f"/tmp/meet_{meet_id}.csv"
+    export_csv(meet_id, local_csv)
+    with open(local_csv, 'rb') as f:
+        dbx.files_upload(f.read(), remote_path)
