@@ -1,57 +1,58 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QMessageBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QAction, QMenu
 from meet_tab import MeetTab
 from timing_tab import TimingTab
 from results_tab import ResultsTab
 from settings_tab import SettingsTab
-from help_content import onboarding_dialog
-from utils.logger import get_logger
+from help_tab import HelpTab
+from PyQt6.QtGui import QFont, QKeySequence
+from PyQt6.QtCore import Qt
 
-logger = get_logger(__name__)
+def themed_palette():
+    from PyQt6.QtGui import QPalette, QColor
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor("#F0F7FA"))
+    palette.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor("#0097A7"))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor("#082032"))
+    return palette
+
+FONT_FAMILY = "Arial Rounded MT Bold, Arial, Helvetica, sans-serif"
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Swim Meet Manager v2")
-        self.setWindowState(Qt.WindowState.WindowMaximized)
+        self.setWindowTitle("Swim Meet Manager Professional")
+        self.setGeometry(100, 50, 1200, 800)
+        self.setPalette(themed_palette())
+        self.setFont(QFont(FONT_FAMILY, 11))
         self.tabs = QTabWidget()
+        self.tabs.addTab(MeetTab(), "🏊 Meet Info")
+        self.tabs.addTab(TimingTab(), "⏲ Devices & Sync")
+        self.tabs.addTab(ResultsTab(), "🏅 Results & Export")
+        self.tabs.addTab(SettingsTab(), "⚙️ Settings")
+        self.tabs.addTab(HelpTab(), "❓ Help & Onboarding")
         self.setCentralWidget(self.tabs)
-
-        # Add each independently-coded, robust tab
-        self.tab_meet = MeetTab(parent=self)
-        self.tab_timing = TimingTab(parent=self)
-        self.tab_results = ResultsTab(parent=self)
-        self.tab_settings = SettingsTab(parent=self)
-        self.tabs.addTab(self.tab_meet, "Meet Setup")
-        self.tabs.addTab(self.tab_timing, "Timing Devices")
-        self.tabs.addTab(self.tab_results, "Results/Export")
-        self.tabs.addTab(self.tab_settings, "Settings & Tools")
-
-        # Optional: On first start, show onboarding
-        self.show_onboarding_if_needed()
-
-        self.menu = self.menuBar().addMenu('Help')
-        helpAction = self.menu.addAction('Onboarding/Help')
-        helpAction.triggered.connect(lambda: onboarding_dialog(self))
-
-    def show_onboarding_if_needed(self):
-        # Logic for onboarding only on first start
-        # ...
-        onboarding_dialog(self)
-
+        self.create_menus()
+        self.tabs.setCurrentIndex(0)
+    def create_menus(self):
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu("&File")
+        help_menu = menubar.addMenu("&Help")
+        exit_action = QAction("E&xit", self)
+        exit_action.setShortcut(QKeySequence.Quit)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        about_action = QAction("&About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+    def show_about(self):
+        QMessageBox.information(self, "About", "Swim Meet Manager\nContact: support@example.com")
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Confirm Exit', "Are you sure you want to quit?",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        reply = QMessageBox.question(
+            self, 'Exit', "Quit the Swim Meet Manager?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
-            logger.info("Application exited by user.")
             event.accept()
         else:
             event.ignore()
-
-if __name__ == '__main__':
-    import sys
-    app = QApplication(sys.argv)
-    win = MainWindow()
-    win.show()
-    sys.exit(app.exec())
