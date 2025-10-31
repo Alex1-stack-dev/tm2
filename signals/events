@@ -1,0 +1,5 @@
+from PyQt6.QtCore import pyqtSignal, QObject
+class EventDispatcher(QObject):
+    meet_saved = pyqtSignal(object)  # Emits meet info dict
+    results_imported = pyqtSignal(object)  # Emits results list
+# Usage: In GUI, trigger event_dispatcher.meet_saved.emit(meet_data)
