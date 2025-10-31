@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: windows-latest
@@ -19,9 +23,22 @@ jobs:
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
+      - name: Prepare add-data args
+        id: prepare
+        run: |
+          ADD_DATA_ARGS=""
+          shopt -s globstar
+          for item in **/*; do
+            if [[ -f "$item" || -d "$item" ]]; then
+              # Skip .git directory and .github/workflows itself
+              [[ "$item" == ".git"* || "$item" == ".github"* ]] && continue
+              ADD_DATA_ARGS+=" --add-data '$item;$item'"
+            fi
+          done
+          echo "ADD_DATA_ARGS=$ADD_DATA_ARGS" >> $GITHUB_ENV
       - name: Build
         run: |
-          pyinstaller main.py --onefile --add-data "resources;resources" --hidden-import=sqlalchemy --hidden-import=fpdf
+          pyinstaller main.py --onefile ${{ env.ADD_DATA_ARGS }} --hidden-import=sqlalchemy --hidden-import=fpdf
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
