@@ -19,7 +19,7 @@ jobs:
       run: |
         pyinstaller main.py --onefile --add-data "resources;resources" --hidden-import=sqlalchemy --hidden-import=fpdf
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: windows-exe
         path: dist/*
